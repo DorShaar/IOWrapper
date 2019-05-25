@@ -5,172 +5,163 @@ using System.Linq;
 
 namespace IOWrapper
 {
-    [Serializable]
-    public class FilePath
-    {
-        public string DirectoryPath { get; private set; }
-        public string FileName { get; private set; }
+     [Serializable]
+     public class FilePath
+     {
+          public string DirectoryPath { get; private set; }
+          public string FileName { get; private set; }
 
-        public static FilePath CreateFilePathWithPrefix(string directoryPath, string prefix, string nameWithExtension)
-        {
-            return new FilePath(directoryPath.TrimEnd(), prefix, nameWithExtension);
-        }
+          private FilePath(string directoryPath, string prefix, string nameWithExtension)
+          {
+               DirectoryPath = directoryPath;
+               FileName = $"{prefix}_{Path.GetFileName(nameWithExtension)}";
+          }
 
-        public static FilePath CreateFilePath(string fullPath)
-        {
-            return new FilePath(fullPath);
-        }
+          private FilePath(string path, string name)
+          {
+               DirectoryPath = path;
+               try
+               {
+                    FileName = Path.GetFileName(name);
+               }
+               catch (ArgumentException e)
+               {
+                    Console.WriteLine($"Invalid Characters in {name}", e);
+                    if (CheckForInvalidCharacters(name))
+                    {
+                         name = GetNameWithoutInvalidCharacters(name);
+                    }
+               }
+          }
 
-        public static FilePath CreateFilePath(string path, string name)
-        {
-            return new FilePath(path, name);
-        }
+          private FilePath(string fullPath)
+          {
+               DirectoryPath = Path.GetDirectoryName(fullPath);
+               FileName = Path.GetFileName(fullPath);
+          }
 
-        public string NameWithoutExtension
-        {
-            get
-            {
-                return Path.GetFileNameWithoutExtension(FileName);
-            }
-        }
+          public static FilePath CreateFilePathWithPrefix(string directoryPath, string prefix, string nameWithExtension)
+          {
+               return new FilePath(directoryPath.TrimEnd(), prefix, nameWithExtension);
+          }
 
-        public string FileFullPath
-        {
-            get
-            {
-                return Path.Combine(DirectoryPath, FileName);
-            }
-        }
+          public static FilePath CreateFilePath(string fullPath)
+          {
+               return new FilePath(fullPath);
+          }
 
-        public string Extension
-        {
-            get
-            {
-                return Path.GetExtension(FileName).ToLower();
-            }
-        }
+          public static FilePath CreateFilePath(string path, string name)
+          {
+               return new FilePath(path, name);
+          }
 
-        public static List<FilePath> GetFiles(string directoryPath)
-        {
-            List<FilePath> filePaths = new List<FilePath>();
-            FileAttributes fileAttributes = File.GetAttributes(directoryPath);
+          public string NameWithoutExtension
+          {
+               get { return Path.GetFileNameWithoutExtension(FileName); }
+          }
 
-            if (fileAttributes.HasFlag(FileAttributes.Directory))
-            {
-                string[] files = Directory.GetFiles(directoryPath);
-                for (int i = 0; i < files.Length; ++i)
-                {
-                    filePaths.Add(CreateFilePath(files[i]));
-                }
-            }
-            else
-            {
-                Console.WriteLine($"{directoryPath} is not a directory therefore does not have files");
-            }
+          public string FileFullPath
+          {
+               get { return Path.Combine(DirectoryPath, FileName); }
+          }
 
-            return filePaths;
-        }
+          public string Extension
+          {
+               get { return Path.GetExtension(FileName).ToLower(); }
+          }
 
-        public List<FilePath> GetFiles()
-        {
-            return GetFiles(FileFullPath);
-        }
+          public static List<FilePath> GetFiles(string directoryPath)
+          {
+               List<FilePath> filePaths = new List<FilePath>();
+               FileAttributes fileAttributes = File.GetAttributes(directoryPath);
 
-        public static List<FilePath> GetDirectories(string directoryPath)
-        {
-            List<FilePath> directoriesPaths = new List<FilePath>();
-            FileAttributes fileAttributes = File.GetAttributes(directoryPath);
+               if (fileAttributes.HasFlag(FileAttributes.Directory))
+               {
+                    string[] files = Directory.GetFiles(directoryPath);
+                    for (int i = 0; i < files.Length; ++i)
+                    {
+                         filePaths.Add(CreateFilePath(files[i]));
+                    }
+               }
+               else
+               {
+                    Console.WriteLine($"{directoryPath} is not a directory therefore does not have files");
+               }
 
-            if (fileAttributes.HasFlag(FileAttributes.Directory))
-            {
-                string[] files = Directory.GetDirectories(directoryPath);
-                for (int i = 0; i < files.Length; ++i)
-                {
-                    directoriesPaths.Add(CreateFilePath(files[i]));
-                }
-            }
-            else
-            {
-                Console.WriteLine($"{directoryPath} is not a directory therefore does not contain another directories");
-            }
+               return filePaths;
+          }
 
-            return directoriesPaths;
-        }
+          public List<FilePath> GetFiles()
+          {
+               return GetFiles(FileFullPath);
+          }
 
-        public List<FilePath> GetDirectories()
-        {
-            return GetDirectories(FileFullPath);
-        }
+          public static List<FilePath> GetDirectories(string directoryPath)
+          {
+               List<FilePath> directoriesPaths = new List<FilePath>();
+               FileAttributes fileAttributes = File.GetAttributes(directoryPath);
 
-        public FilePath CreateNewFilePathWithPrefix(string outputDirectory, string prefix)
-        {
-            return CreateFilePathWithPrefix(outputDirectory, prefix, FileName);
-        }
+               if (fileAttributes.HasFlag(FileAttributes.Directory))
+               {
+                    string[] files = Directory.GetDirectories(directoryPath);
+                    for (int i = 0; i < files.Length; ++i)
+                    {
+                         directoriesPaths.Add(CreateFilePath(files[i]));
+                    }
+               }
+               else
+               {
+                    Console.WriteLine($"{directoryPath} is not a directory therefore does not contain another directories");
+               }
 
-        public FilePath CreateNewFilePathWithPrefix(string prefix)
-        {
-            return CreateFilePathWithPrefix(DirectoryPath, prefix, FileName);
-        }
+               return directoriesPaths;
+          }
 
-        private FilePath(string directoryPath, string prefix, string nameWithExtension)
-        {
-            DirectoryPath = directoryPath;
-            FileName = $"{prefix}_{Path.GetFileName(nameWithExtension)}";
-        }
+          public List<FilePath> GetDirectories()
+          {
+               return GetDirectories(FileFullPath);
+          }
 
-        private FilePath(string path, string name)
-        {
-            DirectoryPath = path;
-            try
-            {
-                FileName = Path.GetFileName(name);
-            }
-            catch (ArgumentException e)
-            {
-                Console.WriteLine($"Invalid Characters in {name}", e);
-                if (CheckForInvalidCharacters(name))
-                {
-                    name = GetNameWithoutInvalidCharacters(name);
-                }
-            }
-        }
+          public FilePath CreateNewFilePathWithPrefix(string outputDirectory, string prefix)
+          {
+               return CreateFilePathWithPrefix(outputDirectory, prefix, FileName);
+          }
 
-        private FilePath(string fullPath)
-        {
-            DirectoryPath = Path.GetDirectoryName(fullPath);
-            FileName = Path.GetFileName(fullPath);
-        }
+          public FilePath CreateNewFilePathWithPrefix(string prefix)
+          {
+               return CreateFilePathWithPrefix(DirectoryPath, prefix, FileName);
+          }
 
-        private bool CheckForInvalidCharacters(string name)
-        {
-            bool isContainInvalidCharacters = false;
+          private bool CheckForInvalidCharacters(string name)
+          {
+               bool isContainInvalidCharacters = false;
 
-            foreach (char ch in name)
-            {
-                if (Path.GetInvalidPathChars().Contains(ch))
-                {
-                    isContainInvalidCharacters = true;
-                    break;
-                }
-            }
+               foreach (char ch in name)
+               {
+                    if (Path.GetInvalidPathChars().Contains(ch))
+                    {
+                         isContainInvalidCharacters = true;
+                         break;
+                    }
+               }
 
-            return isContainInvalidCharacters;
-        }
+               return isContainInvalidCharacters;
+          }
 
-        private string GetNameWithoutInvalidCharacters(string name)
-        {
-            string invalidCharacters = new string(Path.GetInvalidPathChars()) + new string(Path.GetInvalidFileNameChars());
-            foreach (char ch in invalidCharacters)
-            {
-                name = name.Replace(ch.ToString(), "");
-            }
+          private string GetNameWithoutInvalidCharacters(string name)
+          {
+               string invalidCharacters = new string(Path.GetInvalidPathChars()) + new string(Path.GetInvalidFileNameChars());
+               foreach (char ch in invalidCharacters)
+               {
+                    name = name.Replace(ch.ToString(), "");
+               }
 
-            return name;
-        }
+               return name;
+          }
 
-        public static implicit operator FilePath(string path)
-        {
-            return new FilePath(path);
-        }
-    }
+          public static implicit operator FilePath(string path)
+          {
+               return new FilePath(path);
+          }
+     }
 }
